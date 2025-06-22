@@ -1,4 +1,4 @@
-package pokeAPI
+package pokeapi
 
 import (
 	"encoding/json"
@@ -17,7 +17,18 @@ type ListResponse struct {
 	} `json:"results"`
 }
 
-func GetList(url string) ListResponse {
+func (c *Client) GetList(url string) ListResponse {
+	if val, ok := c.cache.Get(url); ok {
+		locationsResp := ListResponse{}
+		err := json.Unmarshal(val, &locationsResp)
+		if err != nil {
+			log.Fatalf("err")
+			return ListResponse{}
+		}
+
+		return locationsResp
+	}
+
 	res, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)

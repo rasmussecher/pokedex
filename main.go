@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
-	pokeAPI "github.com/rasmussecher/pokedex/internal/api"
+	"github.com/rasmussecher/pokedex/internal/pokeapi"
 )
 
 type cliCommand struct {
@@ -16,8 +17,9 @@ type cliCommand struct {
 }
 
 type config struct {
-	Next     string
-	Previous string
+	pokeapiClient pokeapi.Client
+	Next          string
+	Previous      string
 }
 
 var commands map[string]cliCommand
@@ -48,10 +50,14 @@ func init() {
 }
 
 func main() {
+	pokeClient := pokeapi.NewClient(5*time.Second, time.Minute*5)
+
 	ctx := config{
-		Next:     "https://pokeapi.co/api/v2/location-area",
-		Previous: "https://pokeapi.co/api/v2/location-area",
+		pokeapiClient: pokeClient,
+		Next:          "https://pokeapi.co/api/v2/location-area",
+		Previous:      "https://pokeapi.co/api/v2/location-area",
 	}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -104,7 +110,7 @@ func handleMap(cfg *config, url string) {
 		fmt.Printf("You must go further forward in the pagination.\n")
 		return
 	}
-	location := pokeAPI.GetList(url)
+	location := cfg.pokeapiClient.GetList(url)
 	cfg.Next = location.Next
 	cfg.Previous = location.Previous
 	for _, m := range location.ExtractNames() {
