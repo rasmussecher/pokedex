@@ -1,4 +1,4 @@
-package api
+package pokeAPI
 
 import (
 	"encoding/json"
@@ -7,17 +7,17 @@ import (
 	"net/http"
 )
 
-type Location struct {
+type ListResponse struct {
 	Count    int32  `json:"count"`
 	Next     string `json:"next"`
 	Previous string `json:"previous"`
-	Results  struct {
+	Results  []struct {
 		Name string `json:"name"`
 		URL  string `json:"url"`
 	} `json:"results"`
 }
 
-func getLocations(url string) Location {
+func GetList(url string) ListResponse {
 	res, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -30,10 +30,18 @@ func getLocations(url string) Location {
 	if err != nil {
 		log.Fatal(err)
 	}
-	location := Location{}
-	err = json.Unmarshal(body, &location)
+	listRes := ListResponse{}
+	err = json.Unmarshal(body, &listRes)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return location
+	return listRes
+}
+
+func (listRes *ListResponse) ExtractNames() []string {
+	names := []string{}
+	for i := range listRes.Results {
+		names = append(names, listRes.Results[i].Name)
+	}
+	return names
 }

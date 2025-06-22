@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	pokeAPI "github.com/rasmussecher/pokedex/internal/api"
 )
 
 type cliCommand struct {
@@ -82,12 +84,12 @@ func commandHelp(cfg *config) error {
 }
 
 func commandMap(cfg *config) error {
-	location := getLocations(cfg.Next)
-	fmt.Println(location)
+	handleMap(cfg, cfg.Next)
 	return nil
 }
 
 func commandMapb(cfg *config) error {
+	handleMap(cfg, cfg.Previous)
 	return nil
 }
 
@@ -95,4 +97,17 @@ func commandExit(cfg *config) error {
 	fmt.Print("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
+}
+
+func handleMap(cfg *config, url string) {
+	if url == "" {
+		fmt.Printf("You must go further forward in the pagination.\n")
+		return
+	}
+	location := pokeAPI.GetList(url)
+	cfg.Next = location.Next
+	cfg.Previous = location.Previous
+	for _, m := range location.ExtractNames() {
+		fmt.Printf("%s\n", m)
+	}
 }
