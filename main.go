@@ -10,7 +10,12 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(config *config) error
+}
+
+type config struct {
+	Next     string
+	Previous string
 }
 
 var commands map[string]cliCommand
@@ -22,6 +27,16 @@ func init() {
 			description: "Displays a help message",
 			callback:    commandHelp,
 		},
+		"map": {
+			name:        "map",
+			description: "Show the next 20 areas",
+			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Show the previous 20 areas",
+			callback:    commandMapb,
+		},
 		"exit": {
 			name:        "exit",
 			description: "Exit the Pokedex",
@@ -31,6 +46,10 @@ func init() {
 }
 
 func main() {
+	ctx := config{
+		Next:     "https://pokeapi.co/api/v2/location-area",
+		Previous: "https://pokeapi.co/api/v2/location-area",
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("Pokedex > ")
@@ -38,7 +57,7 @@ func main() {
 		input := cleanInput(scanner.Text())
 		command, ok := commands[input[0]]
 		if ok {
-			command.callback()
+			command.callback(&ctx)
 		} else {
 			fmt.Print("Unknown command\n")
 		}
@@ -53,7 +72,7 @@ func cleanInput(text string) []string {
 	return words
 }
 
-func commandHelp() error {
+func commandHelp(cfg *config) error {
 	fmt.Print("Welcome to the Pokedex!\n")
 	fmt.Print("Usage:\n\n")
 	for _, c := range commands {
@@ -62,7 +81,17 @@ func commandHelp() error {
 	return nil
 }
 
-func commandExit() error {
+func commandMap(cfg *config) error {
+	location := getLocations(cfg.Next)
+	fmt.Println(location)
+	return nil
+}
+
+func commandMapb(cfg *config) error {
+	return nil
+}
+
+func commandExit(cfg *config) error {
 	fmt.Print("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
