@@ -13,13 +13,14 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *config) error
+	callback    func(cfg *config, params []string) error
 }
 
 type config struct {
 	pokeapiClient pokeapi.Client
 	Next          string
 	Previous      string
+	Explore       string
 }
 
 var commands map[string]cliCommand
@@ -41,6 +42,11 @@ func init() {
 			description: "Show the previous 20 areas",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore <area_name>",
+			description: "Explore an area",
+			callback:    commandExplore,
+		},
 		"exit": {
 			name:        "exit",
 			description: "Exit the Pokedex",
@@ -56,6 +62,7 @@ func main() {
 		pokeapiClient: pokeClient,
 		Next:          "https://pokeapi.co/api/v2/location-area",
 		Previous:      "https://pokeapi.co/api/v2/location-area",
+		Explore:       "https://pokeapi.co/api/v2/location-area/",
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -63,9 +70,13 @@ func main() {
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
 		input := cleanInput(scanner.Text())
+		if len(input) == 0 {
+			fmt.Printf("You must input a command. Type \"help\" for a list of commands")
+			continue
+		}
 		command, ok := commands[input[0]]
 		if ok {
-			command.callback(&ctx)
+			command.callback(&ctx, input[1:])
 		} else {
 			fmt.Print("Unknown command\n")
 		}
@@ -80,7 +91,7 @@ func cleanInput(text string) []string {
 	return words
 }
 
-func commandHelp(cfg *config) error {
+func commandHelp(cfg *config, params []string) error {
 	fmt.Print("Welcome to the Pokedex!\n")
 	fmt.Print("Usage:\n\n")
 	for _, c := range commands {
@@ -89,17 +100,30 @@ func commandHelp(cfg *config) error {
 	return nil
 }
 
-func commandMap(cfg *config) error {
+func commandMap(cfg *config, params []string) error {
 	handleMap(cfg, cfg.Next)
 	return nil
 }
 
-func commandMapb(cfg *config) error {
+func commandMapb(cfg *config, params []string) error {
 	handleMap(cfg, cfg.Previous)
 	return nil
 }
 
-func commandExit(cfg *config) error {
+func commandExplore(cfg *config, params []string) error {
+	if len(params) < 1 {
+		fmt.Printf("You must enter an area!\n")
+		return nil
+	}
+	area := params[0]
+	encounters := cfg.pokeapiClient.GetPokemonsForArea(cfg.Explore + area)
+	for _, e := range encounters.Encounters {
+		fmt.Printf("%s\n", e.Pokemon.Name)
+	}
+	return nil
+}
+
+func commandExit(cfg *config, params []string) error {
 	fmt.Print("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
