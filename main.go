@@ -52,8 +52,18 @@ func init() {
 		},
 		"catch": {
 			name:        "catch <pokemon_name>",
-			description: "Attempt to catch a pokemon",
+			description: "Attempt to catch a Pokemon",
 			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect <pokemon_name>",
+			description: "Inspect a Pokemon in your inventory",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Print all the Pokemons in your Pokedex",
+			callback:    commandPokedex,
 		},
 		"exit": {
 			name:        "exit",
@@ -157,6 +167,28 @@ func commandCatch(cfg *config, params []string) error {
 	return nil
 }
 
+func commandInspect(cfg *config, params []string) error {
+	if len(params) != 1 {
+		return errors.New("you must provide a pokemon name")
+	}
+
+	name := params[0]
+	pokemon, ok := cfg.caughtPokemon[name]
+	if !ok {
+		fmt.Printf("you have not cought that pokemon\n")
+	}
+	printPokemon(pokemon)
+	return nil
+}
+
+func commandPokedex(cfg *config, params []string) error {
+	fmt.Printf("Your Pokedex:\n")
+	for _, p := range cfg.caughtPokemon {
+		fmt.Printf(" - %s\n", p.Name)
+	}
+	return nil
+}
+
 func commandExit(cfg *config, params []string) error {
 	fmt.Print("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
@@ -173,5 +205,16 @@ func handleMap(cfg *config, url string) {
 	cfg.Previous = location.Previous
 	for _, m := range location.ExtractNames() {
 		fmt.Printf("%s\n", m)
+	}
+}
+
+func printPokemon(p pokeapi.Pokemon) {
+	fmt.Printf("Name: %s\nHeight: %d\nWeight: %d\nStats:\n", p.Name, p.Height, p.Weight)
+	for _, s := range p.Stats {
+		fmt.Printf("  -%s: %d\n", s.Stat.Name, s.BaseStat)
+	}
+	fmt.Printf("Types:\n")
+	for _, t := range p.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
 	}
 }
